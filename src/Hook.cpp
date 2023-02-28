@@ -1,11 +1,8 @@
 #include <HookAPI.h>
 #include <LoggerAPI.h>
-//#include <mc/DragonBaseGoal.hpp>
-//#include <mc/DragonChargePlayerGoal.hpp>
 #include <mc/DragonDeathGoal.hpp>
 #include <mc/DragonFireball.hpp>
 #include <mc/DragonFlamingGoal.hpp>
-//#include <mc/DragonHoldingPatternGoal.hpp>
 #include <mc/DragonLandingGoal.hpp>
 #include <mc/DragonScanningGoal.hpp>
 #include <mc/DragonStrafePlayerGoal.hpp>
