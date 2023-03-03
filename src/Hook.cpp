@@ -1,8 +1,11 @@
 #include <HookAPI.h>
 #include <LoggerAPI.h>
+//#include <mc/DragonBaseGoal.hpp>
+//#include <mc/DragonChargePlayerGoal.hpp>
 #include <mc/DragonDeathGoal.hpp>
 #include <mc/DragonFireball.hpp>
 #include <mc/DragonFlamingGoal.hpp>
+//#include <mc/DragonHoldingPatternGoal.hpp>
 #include <mc/DragonLandingGoal.hpp>
 #include <mc/DragonScanningGoal.hpp>
 #include <mc/DragonStrafePlayerGoal.hpp>
@@ -54,6 +57,8 @@ TInstanceHook(bool, "?die@Mob@@UEAAXAEBVActorDamageSource@@@Z", Mob, ActorDamage
     if (getTypeName() == "minecraft:ender_dragon") {
         isDragonAlive = false;
         SaveDeath();
+        RemoveCrystal();
+        KillReward();
     }
     return original(this, ads);
 }
@@ -64,7 +69,9 @@ TClasslessInstanceHook(void, "?_setRespawnStage@EndDragonFight@@AEAAXW4RespawnAn
     }
     original(this, a1);
     isDragonAlive = true;
+    isLanding = false;
     SaveAlive();
+    ResetPlayerData();
     auto uid = dAccess<ActorUniqueID>(this, 64);
     auto en = Global<Level>->getEntity(uid);
     AttributeInstance* HP = en->getMutableAttribute(Global<SharedAttributes>->HEALTH);
@@ -74,13 +81,16 @@ TClasslessInstanceHook(void, "?_setRespawnStage@EndDragonFight@@AEAAXW4RespawnAn
 }
 
 TInstanceHook(bool, "?_hurt@EnderCrystal@@MEAA_NAEBVActorDamageSource@@M_N1@Z", EnderCrystal, ActorDamageSource& a1, float a2, bool a3, bool a4){
-    if (AttackCrystalOnly) {
+    if (AttackCrystalOnly && isDragonAlive) {
         if (a1.isEntitySource()) {
             if (a1.getEntity()->isPlayer() && a1.getCause() == ActorDamageCause::EntityAttack) {
                 if (DragonLightning) {
                     ActorDefinitionIdentifier identifier("lightning_bolt");
                     auto pos = a1.getEntity()->getPosition();
                     Global<Level>->getSpawner().spawnProjectile(*Level::getBlockSource(2), identifier, nullptr, pos, pos);
+                }
+                if (CrystalExplodeEffect) {
+                    AddCrystalExplodeEffect((Player*)(a1.getEntity()));
                 }
                 return original(this, a1, a2, a3, a4);
             }
@@ -91,11 +101,11 @@ TInstanceHook(bool, "?_hurt@EnderCrystal@@MEAA_NAEBVActorDamageSource@@M_N1@Z", 
 }
 
 TInstanceHook(void, "?explode@Level@@UEAAXAEAVBlockSource@@PEAVActor@@AEBVVec3@@M_N3M3@Z", Level, BlockSource* bl, Actor* en, Vec3* pos, float power, bool fire, bool destory, float a2, bool a3){
-	if (ModifyCrystalExplosion == false) {
+	if (ModifyCrystalExplosion == false || isDragonAlive == false) {
         return original(this, bl, en, pos, power, fire, destory, a2, a3);
     }
     if (en != nullptr) {
-        if (en->getTypeName() == "minecraft:ender_crystal" && isDragonAlive) {
+        if (en->getTypeName() == "minecraft:ender_crystal") {
             if (en->getNbt().get()->get("ShowBottom")->toJson(4) == "1") {
                 int Npower = CrystalExplosionPower;
                 bool Nfire = CrystalExplosionFire;
@@ -131,16 +141,24 @@ TInstanceHook(bool, "?_hurt@Mob@@MEAA_NAEBVActorDamageSource@@M_N1@Z", Mob, Acto
                 }
                 if (PlayerDamageLimit && dmg >= MaxDamagePerTime) { //Damage Limit
                     dmg = MaxDamagePerTime;
-                    return original(this, src, dmg, a1, a2);
                 }
+                auto uid = getActorUniqueId();
+                auto res = original(this, src, dmg, a1, a2);
+                auto fdmg = Global<Level>->getEntity(uid)->getLastHurtDamage();
+                WritePlayerData((Player*)source, fdmg);
+                return res;
             }
             else return false;
         }
         else return false;
     }
     if (ModifyDragonDamage && isPlayer() && src.isEntitySource()) {
-        auto pl = (Player*)this;
+        auto pl = (Mob*)this;
         if (src.getEntity()->getTypeName() == "minecraft:ender_dragon") {
+            if (ForceKonckback) {
+                auto en = (Actor*)src.getEntity();
+                pl->knockback(en, 30, 10, 10, 10, 10, 10);
+            }
             if (src.getCause() != ActorDamageCause::Magic) {
                 dmg = DirectAttackDamage;
                 return original(this, src, dmg, a1, a2);
@@ -168,11 +186,6 @@ TInstanceHook(float, "?getDamageAfterResistanceEffect@Mob@@UEBAMAEBVActorDamageS
         }
     }
     return original(this, src, dmg);
-}
-
-TInstanceHook(void, "?stop@DragonDeathGoal@@UEAAXXZ", DragonDeathGoal) {
-    //
-    return original(this);
 }
 
 TInstanceHook(void, "?start@DragonFlamingGoal@@UEAAXXZ", DragonFlamingGoal) {
@@ -207,6 +220,9 @@ TInstanceHook(void, "?setTarget@DragonStrafePlayerGoal@@AEAAXPEAVActor@@@Z", Dra
     if (SpawnChildMob) {
         auto pos = pl->getPosition();
         SpawnChildMobs(pos);
+    }
+    if (DragonExplodeEffect) {
+        DragonUseEffect();
     }
     return original(this, pl);
 }

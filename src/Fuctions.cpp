@@ -16,11 +16,15 @@
 #include <mc/Actor.hpp>
 #include <mc/SharedAttributes.hpp>
 #include <mc/AttributeInstance.hpp>
+#include <RemoteCallAPI.h>
+#include <mc/Scoreboard.hpp>
+#include <mc/MobEffectInstance.hpp>
+#include <mc/Actor.hpp>
 
 extern bool isDragonAlive;
 
 void AddCrystalHealList(Vec3* pos) {
-    std::ifstream DataFile("plugins/FerociousEnderDragon/data.json");
+    std::ifstream DataFile("plugins/FerociousEnderDragon/data/data.json");
     if (!DataFile.is_open()) {
         return;
     }
@@ -34,7 +38,7 @@ void AddCrystalHealList(Vec3* pos) {
         {"Z", ((*pos).z)},
         {"HealTime", 0}
     };
-    std::ofstream NDataFile("plugins/FerociousEnderDragon/data.json");
+    std::ofstream NDataFile("plugins/FerociousEnderDragon/data/data.json");
     if (!NDataFile.is_open()) {
         return;
     }
@@ -43,7 +47,7 @@ void AddCrystalHealList(Vec3* pos) {
 }
 
 void CheckAlive() {
-    std::ifstream DataFile("plugins/FerociousEnderDragon/data.json");
+    std::ifstream DataFile("plugins/FerociousEnderDragon/data/data.json");
     if (!DataFile.is_open()) {
         return;
     }
@@ -58,7 +62,7 @@ void CheckAlive() {
 void SaveAlive() {
     nlohmann::json data;
     data["isDragonAlive"]= true;
-    std::ofstream NDataFile("plugins/FerociousEnderDragon/data.json");
+    std::ofstream NDataFile("plugins/FerociousEnderDragon/data/data.json");
     if (!NDataFile.is_open()) {
         return;
     }
@@ -69,7 +73,7 @@ void SaveAlive() {
 void SaveDeath() {
     nlohmann::json data;
     data["isDragonAlive"]= false;
-    std::ofstream NDataFile("plugins/FerociousEnderDragon/data.json");
+    std::ofstream NDataFile("plugins/FerociousEnderDragon/data/data.json");
     if (!NDataFile.is_open()) {
         return;
     }
@@ -88,7 +92,7 @@ void HealCrystal(Vec3 pos) {
 
 void CrystalHeal() {
     Schedule::repeat([](){
-        std::ifstream DataFile("plugins/FerociousEnderDragon/data.json");
+        std::ifstream DataFile("plugins/FerociousEnderDragon/data/data.json");
         if (!DataFile.is_open()) {
             return;
         }
@@ -115,7 +119,7 @@ void CrystalHeal() {
                     }
                 }
             }
-            std::ofstream NDataFile("plugins/FerociousEnderDragon/data.json");
+            std::ofstream NDataFile("plugins/FerociousEnderDragon/data/data.json");
             if (!NDataFile.is_open()) {
                 return;
             }
@@ -157,6 +161,9 @@ void GlobalLightning() {
 }
 
 void SpawnChildMobs(Vec3 pos) {
+    if (Settings::ChildMobList.size() == 0) {
+        return;
+    }
     for (auto id : Settings::ChildMobList) {
         Global<Level>->spawnMob(pos, 2, id);
     }
@@ -176,4 +183,108 @@ void NatureRegeneration() {
     Schedule::repeat([](){
         HealDragon();
     }, Settings::IntervalTicks);
+}
+
+void WritePlayerData(Player* pl, int fdmg) {
+    std::ifstream DataFile("plugins/FerociousEnderDragon/data/player.json");
+    if (!DataFile.is_open()) {
+        return;
+    }
+    nlohmann::json data;
+    DataFile >> data;
+    DataFile.close();
+    auto xuid = pl->getXuid();
+    auto uuid = pl->getUuid();
+    auto name = pl->getRealName();
+    if (data[uuid].empty()) {
+        data[uuid]["Damage"] = fdmg;
+        data[uuid]["Xuid"] = xuid;
+        data[uuid]["Name"] = name;
+        data[uuid]["Uuid"] = uuid;
+    }
+    else {
+        data[uuid]["Damage"] = data[uuid]["Damage"].get<int>() + fdmg;
+    }
+    data["AllDamage"] = data["AllDamage"].get<int>() + fdmg;
+    std::ofstream NDataFile("plugins/FerociousEnderDragon/data/player.json");
+        if (!NDataFile.is_open()) {
+        return;
+    }
+    NDataFile << data.dump(4);
+    NDataFile.close();
+}
+
+void ResetPlayerData() {
+    nlohmann::json data;
+    data["AllDamage"] = 0;
+    std::ofstream NDataFile("plugins/FerociousEnderDragon/data/player.json");
+    if (!NDataFile.is_open()) {
+        return;
+    }
+    NDataFile << data.dump(4);
+    NDataFile.close();
+}
+
+auto LLMoneyAdd = RemoteCall::importAs<bool(xuid_t xuid, int money)>("LLMoney", "LLMoneyAdd");
+
+void KillReward() {
+    std::ifstream DataFile("plugins/FerociousEnderDragon/data/player.json");
+    if (!DataFile.is_open()) {
+        return;
+    }
+    nlohmann::json data;
+    DataFile >> data;
+    DataFile.close();
+    for (auto db : data) {
+        if (db.contains("Xuid")) {
+            auto per = ((float)(db["Damage"].get<int>()))/((float)(data["AllDamage"].get<int>()));
+            auto mun = (int)(per*Settings::TotalReward);
+            if (Settings::UseLLMoney) {
+                auto xuid = db["Xuid"].get<string>();
+                LLMoneyAdd(xuid, mun);
+            }
+            else {
+                auto uuid = mce::UUID::fromString(db["Uuid"].get<string>());
+                auto score = Settings::MoneyScore;
+                Scoreboard::forceModifyPlayerScore(uuid, score, mun, PlayerScoreSetFunction::Add);
+            }
+        }
+    }
+}
+
+void RemoveCrystal() {
+    auto ens = Global<Level>->getAllEntities();
+    for (auto en : ens) {
+        if (en->getDimensionId() == 2 && en->getTypeName() == "minecraft:ender_crystal") {
+            en->remove();
+        }
+    }
+}
+
+void AddEffect(Player* en, int effectid, int duration, int level) {
+    MobEffectInstance ins = MobEffectInstance((unsigned int)effectid, duration, level, false, true, false);
+    en->addEffect(ins);
+}
+
+void AddCrystalExplodeEffect(Player* pl) {
+    if (Settings::CrystalEffectId.size() == 0) {
+        return;
+    }
+    for (auto id : Settings::CrystalEffectId) {
+        AddEffect(pl, id, Settings::CrystalEffectDurationTicks, Settings::CrystalEffectAmplifier);
+    }
+}
+
+void DragonUseEffect() {
+    if (Settings::DragonEffectId.size() != 0) {
+        auto pls = Level::getAllPlayers();
+        Vec3 pos = {0,64,0};
+        for (auto pl : pls) {
+            if (pl->distanceTo(pos) <= 64 && pl->getDimensionId() == 2) {
+                for (auto id : Settings::DragonEffectId) {
+                    AddEffect(pl, id, Settings::DragonEffectDurationTicks, Settings::DragonEffectAmplifier);
+                }
+            }
+        }
+    }
 }

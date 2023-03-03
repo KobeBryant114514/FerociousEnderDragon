@@ -29,6 +29,19 @@ namespace Settings {
     extern bool NatureRegeneration;
     extern int IntervalTicks;
     extern int RegenerationEachTime;
+    extern bool EnableReward;
+    extern bool UseLLMoney;
+    extern std::string MoneyScore;
+    extern int TotalReward;
+    extern bool ForceKonckback;
+    extern bool CrystalExplodeEffect;
+    extern std::vector<int> CrystalEffectId;
+    extern int CrystalEffectDurationTicks;
+    extern int CrystalEffectAmplifier;
+    extern bool DragonExplodeEffect;
+    extern std::vector<int> DragonEffectId;
+    extern int DragonEffectDurationTicks;
+    extern int DragonEffectAmplifier;
 
     extern nlohmann::ordered_json globaljson();
     void initjson(nlohmann::ordered_json json);

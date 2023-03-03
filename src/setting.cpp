@@ -39,11 +39,35 @@ namespace Settings
     float ReflectPercentage = 20;
     bool SpawnChildMob = true;
     std::vector<std::string> ChildMobList = {
-        "minecraft:warden"
+        "minecraft:wither_skeleton"
     };
     bool NatureRegeneration = false;
     int IntervalTicks = 20;
     int RegenerationEachTime = 1;
+    bool EnableReward = true;
+    bool UseLLMoney = true;
+    std::string MoneyScore = "money";
+    int TotalReward = 114514;
+    bool ForceKonckback = true;
+    bool CrystalExplodeEffect = true;
+    std::vector<int> CrystalEffectId = {
+        2,
+        9,
+        15,
+        17,
+        20
+    };
+    int CrystalEffectDurationTicks = 1200;
+    int CrystalEffectAmplifier = 4;
+    bool DragonExplodeEffect = true;
+    std::vector<int> DragonEffectId = {
+        9,
+        17,
+        20
+    };
+    int DragonEffectDurationTicks = 600;
+    int DragonEffectAmplifier = 4;
+
     nlohmann::ordered_json globaljson()
     {
         nlohmann::ordered_json json;
@@ -72,6 +96,19 @@ namespace Settings
         json["DragonNatureRegeneration"]["Enabled"] = NatureRegeneration;
         json["DragonNatureRegeneration"]["IntervalTicks"] = IntervalTicks;
         json["DragonNatureRegeneration"]["RegenerationEachTime"] = RegenerationEachTime;
+        json["DragonKillReward"]["Enabled"] = EnableReward;
+        json["DragonKillReward"]["UseLLMoney"] = UseLLMoney;
+        json["DragonKillReward"]["ScoreBoard"] = MoneyScore;
+        json["DragonKillReward"]["TatalReward"] = TotalReward;
+        json["DragonForceKnockback"]["Enabled"] = ForceKonckback;
+        json["CrystalExplodeEffect"]["Enabled"] = CrystalExplodeEffect;
+        json["CrystalExplodeEffect"]["CrystalExplodeEffectId"] = CrystalEffectId;
+        json["CrystalExplodeEffect"]["CrystalEffectDurationTicks"] = CrystalEffectDurationTicks;
+        json["CrystalExplodeEffect"]["CrystalEffectAmplifier"] = CrystalEffectAmplifier;
+        json["DragonUsedEffect"]["Enabled"] = DragonExplodeEffect;
+        json["DragonUsedEffect"]["DragonEffectId"] = DragonEffectId;
+        json["DragonUsedEffect"]["CrystalEffectDurationTicks"] = DragonEffectDurationTicks;
+        json["DragonUsedEffect"]["CrystalEffectAmplifier"] = DragonEffectAmplifier;
         return json;
     }
 
@@ -102,6 +139,19 @@ namespace Settings
         TRJ("DragonNatureRegeneration", "Enabled", NatureRegeneration);
         TRJ("DragonNatureRegeneration", "IntervalTicks", IntervalTicks);
         TRJ("DragonNatureRegeneration", "RegenerationEachTime", RegenerationEachTime);
+        TRJ("DragonKillReward", "Enabled", EnableReward);
+        TRJ("DragonKillReward", "UseLLMoney", UseLLMoney);
+        TRJ("DragonKillReward", "ScoreBoard", MoneyScore);
+        TRJ("DragonKillReward", "TatalReward", TotalReward);
+        TRJ("DragonForceKnockback", "Enabled", ForceKonckback);
+        TRJ("CrystalExplodeEffect", "Enabled", CrystalExplodeEffect);
+        TRJ("CrystalExplodeEffect", "CrystalExplodeEffectId", CrystalEffectId);
+        TRJ("CrystalExplodeEffect", "CrystalEffectDurationTicks", CrystalEffectDurationTicks);
+        TRJ("CrystalExplodeEffect", "CrystalEffectAmplifier", CrystalEffectAmplifier);
+        TRJ("DragonUsedEffect", "Enabled", DragonExplodeEffect);
+        TRJ("DragonUsedEffect", "DragonEffectId", DragonEffectId);
+        TRJ("DragonUsedEffect", "CrystalEffectDurationTicks", DragonEffectDurationTicks);
+        TRJ("DragonUsedEffect", "CrystalEffectAmplifier", DragonEffectAmplifier);
     }
 
     void WriteDefaultConfig(const std::string &fileName)
@@ -147,8 +197,8 @@ namespace Settings
 }
 
 void IniData() {
-    if(!std::filesystem::exists("plugins/FerociousEnderDragon/data.json")){
-        std::ofstream DefaultFile("plugins/FerociousEnderDragon/data.json");
+    if(!std::filesystem::exists("plugins/FerociousEnderDragon/data/data.json")){
+        std::ofstream DefaultFile("plugins/FerociousEnderDragon/data/data.json");
         if (!DefaultFile.is_open()) {
             return;
         }
@@ -160,6 +210,7 @@ void IniData() {
     }
 }
 
+#include "Fuctions.h"
 void loadConfig() { 
     if (!std::filesystem::exists("plugins/FerociousEnderDragon")){
         std::filesystem::create_directories("plugins/FerociousEnderDragon");	
@@ -172,4 +223,13 @@ void loadConfig() {
         Settings::WriteDefaultConfig("plugins/FerociousEnderDragon/config.json");
     }
     IniData();
+    if (!std::filesystem::exists("plugins/FerociousEnderDragon/data")){
+        std::filesystem::create_directories("plugins/FerociousEnderDragon/data");	
+    }
+    if (!std::filesystem::exists("plugins/FerociousEnderDragon/data.json")){
+        std::filesystem::remove("plugins/FerociousEnderDragon/data.json");	
+    }
+    if (!std::filesystem::exists("plugins/FerociousEnderDragon/data/player.json")){
+        ResetPlayerData();
+    }
 }
