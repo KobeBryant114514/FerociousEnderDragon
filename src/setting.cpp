@@ -221,11 +221,11 @@ void loadConfig() {
             return;
         }
         nlohmann::json json;
-        json["death.ferociousEnderDragon.explosion"] = "%1$s败落于末影龙制造的爆炸之下";
-        json["death.ferociousEnderDragon.lightning"] = "闪电的速度比%1$s更快";
+        json["death.ferociousEnderDragon.explosion"] = "%1$s只因多看了一眼末影龙就爆炸了";
+        json["death.ferociousEnderDragon.lightning"] = "%1$s败落于末影龙制造的闪电之下";
         json["death.ferociousEnderDragon.dragonBreath"] = "%1$s被末影龙的龙息烤熟了";
-        json["death.ferociousEnderDragon.collision"] = "%1$s只因多看了一眼末影龙就被撞死了";
-        json["death.ferociousEnderDragon.sonicBoom"] = "%1$s在试图伤害末影龙时被一道音波尖啸抹除了";
+        json["death.ferociousEnderDragon.collision"] = "%1$s没能躲过末影龙的冲撞";
+        json["death.ferociousEnderDragon.sonicBoom"] = "%1$s只因太靠近末影龙就融化了";
         DefaultFile << json.dump(4);
         DefaultFile.close();
     }
