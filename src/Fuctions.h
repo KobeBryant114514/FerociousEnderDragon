@@ -1,4 +1,6 @@
 #include "setting.h"
+#include <mc/Actor.hpp>
+#include <mc/ActorDamageSource.hpp>
 
 extern void CrystalHeal();
 extern void AddCrystalHealList(Vec3* pos);
@@ -15,3 +17,4 @@ extern void WritePlayerData(Player* pl, int fdmg);
 extern void RemoveCrystal();
 extern void DragonUseEffect();
 extern void AddCrystalExplodeEffect(Player* pl);
+extern std::string ChangeMsg(std::string name, Actor* en, ActorDamageSource* ads, std::string orimsg);

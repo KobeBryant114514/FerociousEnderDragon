@@ -131,14 +131,14 @@ void CrystalHeal() {
 
 void GlobalExplode() {
     Actor* src = nullptr;
-    auto ens = Global<Level>->getAllEntities(2);
+    auto ens = Global<Level>->getAllEntities();
     for (auto en : ens) {
-        if (en->getTypeName() == "minecraft:ender_dragon") {
+        if (en->getDimensionId() == 2 && en->getTypeName() == "minecraft:ender_dragon") {
             src = en;
             break;
         }
     }
-    int r = 10 + rand() % 30;   //r = 10 ~ 40
+    int r = 10 + rand() % 30;
     for (int i = 0; i <= 18; i++) {
         float x = r*cos(20*i);
         float z = r*sin(20*i);
@@ -286,5 +286,65 @@ void DragonUseEffect() {
                 }
             }
         }
+    }
+}
+
+std::string TransMsg(std::string die, std::string reason) {
+    try {
+		nlohmann::json msgjson;
+		std::ifstream LangFile("plugins/FerociousEnderDragon/DeathMessages.json");
+		if (LangFile) {
+			LangFile >> msgjson;
+			auto dmsg = msgjson[reason].get<string>();
+			ReplaceStr(dmsg, "%1$s", die);
+			return dmsg;
+		}
+		else {
+			return reason;
+		}
+	}
+	catch(...) {
+		return reason;
+	}
+}
+
+std::string ChangeMsg(std::string name, Actor* en, ActorDamageSource* ads, std::string orimsg) {
+    if (orimsg.length() > 65565 || isDragonAlive == false) {
+        return orimsg;
+    }
+    Vec3 ctr = {0,64,0};
+    auto adc = ads->getCause();
+    switch (adc)
+    {
+    case ActorDamageCause::EntityExplosion:
+        if (ads->isEntitySource()) {
+            if (ads->getEntity()->getTypeName() == "minecraft:ender_dragon" && en->getDimensionId() == 2 && en->distanceTo(ctr) <= 64) {
+                return TransMsg(name, "death.ferociousEnderDragon.explosion");
+            }
+        }
+    case ActorDamageCause::Lightning:
+        if (en->getDimensionId() == 2 && en->distanceTo(ctr) <= 64) {
+            return TransMsg(name, "death.ferociousEnderDragon.lightning");
+        }
+    case ActorDamageCause::Magic:
+        if (ads->isEntitySource()) {
+            if (ads->getEntity()->getTypeName() == "minecraft:ender_dragon" && en->getDimensionId() == 2 && en->distanceTo(ctr) <= 64) {
+                return TransMsg(name, "death.ferociousEnderDragon.dragonBreath");
+            }
+        }
+    case ActorDamageCause::EntityAttack:
+        if (ads->isEntitySource()) {
+            if (ads->getEntity()->getTypeName() == "minecraft:ender_dragon" && en->getDimensionId() == 2 && en->distanceTo(ctr) <= 64) {
+                return TransMsg(name, "death.ferociousEnderDragon.collision");
+            }
+        }
+    case ActorDamageCause::All:
+        if (ads->isEntitySource() == false) {
+            if (en->getDimensionId() == 2 && en->distanceTo(ctr) <= 64) {
+                return TransMsg(name, "death.ferociousEnderDragon.sonicBoom");
+            }
+        }
+    default:
+        return orimsg;
     }
 }

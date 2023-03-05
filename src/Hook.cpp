@@ -1,11 +1,9 @@
 #include <HookAPI.h>
 #include <LoggerAPI.h>
-//#include <mc/DragonBaseGoal.hpp>
-//#include <mc/DragonChargePlayerGoal.hpp>
+#include "Version.h"
 #include <mc/DragonDeathGoal.hpp>
 #include <mc/DragonFireball.hpp>
 #include <mc/DragonFlamingGoal.hpp>
-//#include <mc/DragonHoldingPatternGoal.hpp>
 #include <mc/DragonLandingGoal.hpp>
 #include <mc/DragonScanningGoal.hpp>
 #include <mc/DragonStrafePlayerGoal.hpp>
@@ -136,7 +134,7 @@ TInstanceHook(bool, "?_hurt@Mob@@MEAA_NAEBVActorDamageSource@@M_N1@Z", Mob, Acto
                     return false;
                 }
                 if (ReflectDamage) {
-                    auto damage = dmg*ReflectPercentage;
+                    auto damage = dmg*ReflectPercentage/100;
                     source->hurtEntity(damage, ActorDamageCause::All);
                 }
                 if (PlayerDamageLimit && dmg >= MaxDamagePerTime) { //Damage Limit
@@ -225,4 +223,18 @@ TInstanceHook(void, "?setTarget@DragonStrafePlayerGoal@@AEAAXPEAVActor@@@Z", Dra
         DragonUseEffect();
     }
     return original(this, pl);
+}
+
+TInstanceHook(DRES, "?getDeathMessage@ActorDamageSource@@UEBA?AU?$pair@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V?$vector@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V?$allocator@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@@2@@std@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@3@PEAVActor@@@Z", ActorDamageSource, string a1, Actor* a2) {
+    auto res = original(this, a1, a2);
+    auto ads = (ActorDamageSource*)this;
+    res.first = ChangeMsg(a1, a2, ads, res.first);
+    return res;
+}
+
+TInstanceHook(DRES, "?getDeathMessage@ActorDamageByActorSource@@UEBA?AU?$pair@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V?$vector@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V?$allocator@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@@2@@std@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@3@PEAVActor@@@Z", ActorDamageSource, string a1, Actor* a2) {
+    auto res = original(this, a1, a2);
+    auto ads = (ActorDamageSource*)this;
+    res.first = ChangeMsg(a1, a2, ads, res.first);
+    return res;
 }

@@ -215,6 +215,20 @@ void loadConfig() {
     if (!std::filesystem::exists("plugins/FerociousEnderDragon")){
         std::filesystem::create_directories("plugins/FerociousEnderDragon");	
     }
+    if (!std::filesystem::exists("plugins/FerociousEnderDragon/DeathMessages.json")) {
+        std::ofstream DefaultFile("plugins/FerociousEnderDragon/DeathMessages.json");
+        if (!DefaultFile.is_open()) {
+            return;
+        }
+        nlohmann::json json;
+        json["death.ferociousEnderDragon.explosion"] = "%1$s败落于末影龙制造的爆炸之下";
+        json["death.ferociousEnderDragon.lightning"] = "闪电的速度比%1$s更快";
+        json["death.ferociousEnderDragon.dragonBreath"] = "%1$s被末影龙的龙息烤熟了";
+        json["death.ferociousEnderDragon.collision"] = "%1$s只因多看了一眼末影龙就被撞死了";
+        json["death.ferociousEnderDragon.sonicBoom"] = "%1$s在试图伤害末影龙时被一道音波尖啸抹除了";
+        DefaultFile << json.dump(4);
+        DefaultFile.close();
+    }
     if (std::filesystem::exists("plugins/FerociousEnderDragon/config.json")) {
         Settings::LoadConfigFromJson("plugins/FerociousEnderDragon/config.json");
     }
