@@ -137,7 +137,7 @@ TInstanceHook(bool, "?_hurt@Mob@@MEAA_NAEBVActorDamageSource@@M_N1@Z", Mob, Acto
                     auto damage = dmg*ReflectPercentage/100;
                     source->hurtEntity(damage, ActorDamageCause::All);
                 }
-                if (PlayerDamageLimit && dmg >= MaxDamagePerTime) { //Damage Limit
+                if (PlayerDamageLimit && dmg >= MaxDamagePerTime) {
                     dmg = MaxDamagePerTime;
                 }
                 auto uid = getActorUniqueId();
