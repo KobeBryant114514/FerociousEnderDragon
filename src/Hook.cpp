@@ -141,8 +141,16 @@ TInstanceHook(bool, "?_hurt@Mob@@MEAA_NAEBVActorDamageSource@@M_N1@Z", Mob, Acto
                     dmg = MaxDamagePerTime;
                 }
                 auto uid = getActorUniqueId();
+                auto health = getHealth();
                 auto res = original(this, src, dmg, a1, a2);
-                auto fdmg = Global<Level>->getEntity(uid)->getLastHurtDamage();
+                float fdmg = 0;
+                auto entity = Global<Level>->getEntity(uid);
+                if (entity->getHealth() == 0) {
+                    fdmg = (float)health;
+                }
+                else {
+                    fdmg = entity->getLastHurtDamage();
+                }
                 WritePlayerData((Player*)source, fdmg);
                 return res;
             }
@@ -154,9 +162,9 @@ TInstanceHook(bool, "?_hurt@Mob@@MEAA_NAEBVActorDamageSource@@M_N1@Z", Mob, Acto
         auto pl = (Mob*)this;
         if (src.getEntity()->getTypeName() == "minecraft:ender_dragon") {
             isDragonAlive = true;
-            if (ForceKonckback) {
+            if (ForceKonckback && src.getCause() == ActorDamageCause::EntityAttack) {
                 auto en = (Actor*)src.getEntity();
-                pl->knockback(en, 30, 10, 10, 10, 10, 10);
+                pl->knockback(en, 15, 8, 8, 8, 8, 8);
             }
             if (src.getCause() != ActorDamageCause::Magic) {
                 dmg = DirectAttackDamage;
