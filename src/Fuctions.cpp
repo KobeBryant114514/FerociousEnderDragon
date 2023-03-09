@@ -153,10 +153,13 @@ void GlobalLightning() {
     if (pls.size() == 0) {
         return;
     }
+    Vec3 Center = {0,64,0};
+    ActorDefinitionIdentifier identifier("lightning_bolt");
     for (auto pl : pls) {
-        ActorDefinitionIdentifier identifier("lightning_bolt");
-        auto pos = pl->getPosition();
-        Global<Level>->getSpawner().spawnProjectile(*Level::getBlockSource(2), identifier, nullptr, pos, pos);
+        if (pl->distanceTo(Center) <= 128) {
+            auto pos = pl->getPosition();
+            Global<Level>->getSpawner().spawnProjectile(*Level::getBlockSource(2), identifier, nullptr, pos, pos);
+        }
     }
 }
 
@@ -323,18 +326,18 @@ std::string ChangeMsg(std::string name, Actor* en, ActorDamageSource* ads, std::
             }
         }
     case ActorDamageCause::Lightning:
-        if (en->getDimensionId() == 2 && en->distanceTo(ctr) <= 64) {
+        if (en->getDimensionId() == 2 && en->distanceTo(ctr) <= 128) {
             return TransMsg(name, "death.ferociousEnderDragon.lightning");
         }
     case ActorDamageCause::Magic:
         if (ads->isEntitySource()) {
-            if (ads->getEntity()->getTypeName() == "minecraft:ender_dragon" && en->getDimensionId() == 2 && en->distanceTo(ctr) <= 128) {
+            if (ads->getEntity()->getTypeName() == "minecraft:ender_dragon" && en->getDimensionId() == 2) {
                 return TransMsg(name, "death.ferociousEnderDragon.dragonBreath");
             }
         }
     case ActorDamageCause::EntityAttack:
         if (ads->isEntitySource()) {
-            if (ads->getEntity()->getTypeName() == "minecraft:ender_dragon" && en->getDimensionId() == 2 && en->distanceTo(ctr) <= 128) {
+            if (ads->getEntity()->getTypeName() == "minecraft:ender_dragon" && en->getDimensionId() == 2) {
                 return TransMsg(name, "death.ferociousEnderDragon.collision");
             }
         }

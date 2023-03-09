@@ -153,6 +153,7 @@ TInstanceHook(bool, "?_hurt@Mob@@MEAA_NAEBVActorDamageSource@@M_N1@Z", Mob, Acto
     if (ModifyDragonDamage && isPlayer() && src.isEntitySource()) {
         auto pl = (Mob*)this;
         if (src.getEntity()->getTypeName() == "minecraft:ender_dragon") {
+            isDragonAlive = true;
             if (ForceKonckback) {
                 auto en = (Actor*)src.getEntity();
                 pl->knockback(en, 30, 10, 10, 10, 10, 10);
@@ -187,6 +188,7 @@ TInstanceHook(float, "?getDamageAfterResistanceEffect@Mob@@UEBAMAEBVActorDamageS
 }
 
 TInstanceHook(void, "?start@DragonFlamingGoal@@UEAAXXZ", DragonFlamingGoal) {
+    isDragonAlive = true;
     if (DragonExplosion) {
         GlobalExplode();
     }
@@ -194,6 +196,7 @@ TInstanceHook(void, "?start@DragonFlamingGoal@@UEAAXXZ", DragonFlamingGoal) {
 }
 
 TInstanceHook(void, "?stop@DragonFlamingGoal@@UEAAXXZ", DragonFlamingGoal) {
+    isDragonAlive = true;
     if (DragonExplosion) {
         GlobalExplode();
     }
@@ -201,6 +204,7 @@ TInstanceHook(void, "?stop@DragonFlamingGoal@@UEAAXXZ", DragonFlamingGoal) {
 }
 
 TInstanceHook(void, "?start@DragonStrafePlayerGoal@@UEAAXXZ", DragonStrafePlayerGoal) {
+    isDragonAlive = true;
     if (DragonLightning) {
         GlobalLightning();
     }
@@ -208,6 +212,7 @@ TInstanceHook(void, "?start@DragonStrafePlayerGoal@@UEAAXXZ", DragonStrafePlayer
 }
 
 TInstanceHook(void, "?stop@DragonStrafePlayerGoal@@UEAAXXZ", DragonStrafePlayerGoal) {
+    isDragonAlive = true;
     if (DragonLightning) {
         GlobalLightning();
     }
@@ -215,6 +220,7 @@ TInstanceHook(void, "?stop@DragonStrafePlayerGoal@@UEAAXXZ", DragonStrafePlayerG
 }
 
 TInstanceHook(void, "?setTarget@DragonStrafePlayerGoal@@AEAAXPEAVActor@@@Z", DragonStrafePlayerGoal, Actor* pl) {
+    isDragonAlive = true;
     if (SpawnChildMob) {
         auto pos = pl->getPosition();
         SpawnChildMobs(pos);
