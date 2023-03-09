@@ -88,7 +88,7 @@ namespace Settings
         json["DragonExplosion"]["Enabled"] = DragonExplosion;
         json["DragonExplosion"]["Power"] = DragonExplosionPower;
         json["DragonLightning"]["Enabled"] = DragonLightning;
-        json["DragonLightning"]["Power"] = LightningDamage;
+        json["DragonLightning"]["LightningDamage"] = LightningDamage;
         json["ReflectDamage"]["Enabled"] = ReflectDamage;
         json["ReflectDamage"]["Percentage"] = ReflectPercentage;
         json["SpawnChildMobs"]["Enabled"] = SpawnChildMob;
@@ -131,7 +131,7 @@ namespace Settings
         TRJ("DragonExplosion", "Enabled", DragonExplosion);
         TRJ("DragonExplosion", "Power", DragonExplosionPower);
         TRJ("DragonLightning", "Enabled", DragonLightning);
-        TRJ("DragonLightning", "Power", LightningDamage);
+        TRJ("DragonLightning", "LightningDamage", LightningDamage);
         TRJ("ReflectDamage", "Enabled", ReflectDamage);
         TRJ("ReflectDamage", "Percentage", ReflectPercentage);
         TRJ("SpawnChildMobs", "Enabled", SpawnChildMob);
