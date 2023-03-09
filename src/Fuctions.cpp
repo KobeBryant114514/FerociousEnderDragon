@@ -328,19 +328,19 @@ std::string ChangeMsg(std::string name, Actor* en, ActorDamageSource* ads, std::
         }
     case ActorDamageCause::Magic:
         if (ads->isEntitySource()) {
-            if (ads->getEntity()->getTypeName() == "minecraft:ender_dragon" && en->getDimensionId() == 2 && en->distanceTo(ctr) <= 64) {
+            if (ads->getEntity()->getTypeName() == "minecraft:ender_dragon" && en->getDimensionId() == 2 && en->distanceTo(ctr) <= 128) {
                 return TransMsg(name, "death.ferociousEnderDragon.dragonBreath");
             }
         }
     case ActorDamageCause::EntityAttack:
         if (ads->isEntitySource()) {
-            if (ads->getEntity()->getTypeName() == "minecraft:ender_dragon" && en->getDimensionId() == 2) {
+            if (ads->getEntity()->getTypeName() == "minecraft:ender_dragon" && en->getDimensionId() == 2 && en->distanceTo(ctr) <= 128) {
                 return TransMsg(name, "death.ferociousEnderDragon.collision");
             }
         }
     case ActorDamageCause::All:
         if (ads->isEntitySource() == false) {
-            if (en->getDimensionId() == 2 && en->distanceTo(ctr) <= 96) {
+            if (en->getDimensionId() == 2 && en->distanceTo(ctr) <= 128) {
                 return TransMsg(name, "death.ferociousEnderDragon.sonicBoom");
             }
         }
