@@ -32,6 +32,7 @@
 #include <mc/ByteTag.hpp>
 #include <mc/Spawner.hpp>
 #include <mc/ActorDefinitionIdentifier.hpp>
+#include <mc/ItemActor.hpp>
 
 extern Logger logger;
 using namespace std;
@@ -39,7 +40,6 @@ using namespace Settings;
 
 bool isLanding = false;
 bool isDragonAlive = false;
-int Interval = 0;
 
 TInstanceHook(void, "?stop@DragonTakeoffGoal@@UEAAXXZ", DragonTakeoffGoal) {
     isLanding = false;
@@ -58,23 +58,32 @@ TInstanceHook(bool, "?die@Mob@@UEAAXAEBVActorDamageSource@@@Z", Mob, ActorDamage
         RemoveCrystal();
         KillReward();
     }
+    if (isPlayer() && ads->isEntitySource() && DragonHealOnKillMob) {
+        if (ads->getEntity()->getTypeName() == "minecraft:ender_dragon") {
+            ads->getEntity()->heal(HealOnKillMob);
+        }
+    }
     return original(this, ads);
 }
 
-TClasslessInstanceHook(void, "?_setRespawnStage@EndDragonFight@@AEAAXW4RespawnAnimation@@@Z", int a1) {
+TInstanceHook(void, "?_setRespawnStage@EndDragonFight@@AEAAXW4RespawnAnimation@@@Z", EndDragonFight, int a1) {
     if (ModifyDragonHealth == false) {
         return original(this, a1);
     }
     original(this, a1);
-    isDragonAlive = true;
+    Schedule::nextTick([](){
+        isDragonAlive = true;
+    });
     isLanding = false;
     SaveAlive();
     ResetPlayerData();
     auto uid = dAccess<ActorUniqueID>(this, 64);
     auto en = Global<Level>->getEntity(uid);
-    AttributeInstance* HP = en->getMutableAttribute(Global<SharedAttributes>->HEALTH);
-    HP->setMaxValue(DragonHealth);
-    HP->setCurrentValue(DragonHealth);
+    if (en != nullptr) {
+        AttributeInstance* HP = en->getMutableAttribute(Global<SharedAttributes>->HEALTH);
+        HP->setMaxValue(DragonHealth);
+        HP->setCurrentValue(DragonHealth);
+    }
     return;
 }
 
@@ -102,17 +111,21 @@ TInstanceHook(void, "?explode@Level@@UEAAXAEAVBlockSource@@PEAVActor@@AEBVVec3@@
 	if (ModifyCrystalExplosion == false || isDragonAlive == false) {
         return original(this, bl, en, pos, power, fire, destory, a2, a3);
     }
-    if (en != nullptr) {
+    if (en != nullptr && isDragonAlive) {
         if (en->getTypeName() == "minecraft:ender_crystal") {
-            if (en->getNbt().get()->get("ShowBottom")->toJson(4) == "1") {
-                int Npower = CrystalExplosionPower;
-                bool Nfire = CrystalExplosionFire;
-                original(this, bl, en, pos, Npower, Nfire, destory, a2, a3);
-                if (IfCrystalHeal) {
-                    AddCrystalHealList(pos);
+            auto nbt = en->getNbt().get()->get("ShowBottom")->asByteTag()->get();
+            try{
+                if ((int)nbt == 1) {
+                    int Npower = CrystalExplosionPower;
+                    bool Nfire = CrystalExplosionFire;
+                    original(this, bl, en, pos, Npower, Nfire, destory, a2, a3);
+                    if (IfCrystalHeal) {
+                        AddCrystalHealList(pos);
+                    }
+                    return;
                 }
-                return;
             }
+            catch (...) {}
             return original(this, bl, en, pos, power, fire, destory, a2, a3);
         }
 	}
@@ -130,6 +143,7 @@ TInstanceHook(bool, "?_hurt@Mob@@MEAA_NAEBVActorDamageSource@@M_N1@Z", Mob, Acto
                 source = Level::getEntity(src.getDamagingEntityUniqueID());
             }
             if (source->isPlayer()) {
+                isDragonAlive = true;
                 if (isLanding && ImmuneDamageWhileLanding) {
                     return false;
                 }
@@ -252,3 +266,60 @@ TInstanceHook(DRES, "?getDeathMessage@ActorDamageByActorSource@@UEBA?AU?$pair@V?
     res.first = ChangeMsg(a1, a2, ads, res.first);
     return res;
 }
+
+TInstanceHook(bool, "?isInvulnerableTo@ItemActor@@UEBA_NAEBVActorDamageSource@@@Z", ItemActor, ActorDamageSource* ads) {
+    if (CrystalDestroyItem == false && ads->getCause() == ActorDamageCause::BlockExplosion) {
+        return true;
+    }
+    if (ads->isEntitySource()) {
+        if (DragonDestroyItem == false && ads->getEntity()->getTypeName() == "minecraft:ender_dragon") {
+            return true;
+        }
+    }
+    return original(this, ads);
+}
+
+TInstanceHook(int, "?getArmorValue@Mob@@UEBAHXZ", Mob) {
+    if (getTypeName() == "minecraft:ender_dragon") {
+        return (int)ArmorValue;
+    }
+    return original(this);
+}
+
+TInstanceHook(int, "?getToughnessValue@Mob@@UEBAHXZ", Mob) {
+    if (getTypeName() == "minecraft:ender_dragon") {
+        return (int)ToughnessValue;
+    }
+    return original(this);
+}
+
+//?getOnDeathExperience@ExperienceRewardComponent@@QEBAHAEAVActor@@@Z 
+//?awardKillScore@Actor@@UEAAXAEAV1@H@Z
+/*
+#include <mc/Block.hpp>
+#include <mc/BlockSource.hpp>
+#include <mc/Spawner.hpp>
+#include <mc/ItemActor.hpp>
+#include <mc/ItemStack.hpp>
+bool isTNT = false;
+TInstanceHook(void, "?onExploded@Block@@QEBAXAEAVBlockSource@@AEBVBlockPos@@PEAVActor@@@Z", Block, BlockSource* blockSource, BlockPos* blockPosPtr, Actor* actor) {
+    if (actor != nullptr) {
+        if (actor->getTypeName() == "minecraft:tnt") {
+            isTNT = true;
+            Schedule::nextTick([blockPosPtr, blockSource, this](){
+                isTNT = false;
+                Global<Level>->spawnItem(blockPosPtr->toVec3(), blockSource->getDimensionId(), ItemStack::create(this->getTypeName()));
+            });
+        }
+    }
+    return original(this, blockSource, blockPosPtr, actor);
+}
+
+TInstanceHook(ItemActor*, "?spawnItem@Spawner@@QEAAPEAVItemActor@@AEAVBlockSource@@AEBVItemStack@@PEAVActor@@AEBVVec3@@H@Z", Spawner, BlockSource& a1, ItemStack& a2, Actor* a3, Vec3& a4, int a5) {
+    auto it = original(this, a1, a2, a3, a4, a5);
+    if (isTNT) {
+        it->remove();
+    }
+    return it;
+}
+*/

@@ -3,7 +3,6 @@
 #include <mc/Spawner.hpp>
 #include <mc/ActorDefinitionIdentifier.hpp>
 #include <mc/Level.hpp>
-#include <ScheduleAPI.h>
 #include <mc/Actor.hpp>
 #include <mc/CompoundTag.hpp>
 #include <mc/Tag.hpp>
@@ -20,6 +19,10 @@
 #include <mc/Scoreboard.hpp>
 #include <mc/MobEffectInstance.hpp>
 #include <mc/Actor.hpp>
+#include <mc/AreaEffectCloud.hpp>
+#include <mc/BinaryStream.hpp>
+#include <mc/MinecraftPackets.hpp>
+#include <SendPacketAPI.h>
 
 extern bool isDragonAlive;
 
@@ -81,17 +84,51 @@ void SaveDeath() {
     NDataFile.close();
 }
 
-void HealCrystal(Vec3 pos) {
+bool HealCrystal(Vec3 pos) {
     ActorDefinitionIdentifier identifier("ender_crystal");
     auto en = Global<Level>->getSpawner().spawnProjectile(*Level::getBlockSource(2), identifier, nullptr, pos, pos);
-    auto nbt = en->getNbt().release();
-    auto tg = ByteTag::create(1);
-    nbt->put("ShowBottom", std::move(tg));
-    en->setNbt(nbt);
+    if (en != nullptr) {
+        auto nbt = en->getNbt().release();
+        auto tg = ByteTag::create(1);
+        nbt->put("ShowBottom", std::move(tg));
+        en->setNbt(nbt);
+        return true;
+    }
+    return false;
 }
 
-void CrystalHeal() {
-    Schedule::repeat([](){
+void BreathCrystal(Vec3 pos) {
+    ActorDefinitionIdentifier identifier("area_effect_cloud");
+    ActorUniqueID uid = -1;
+    auto ens = Global<Level>->getAllEntities();
+    if (ens.size() >= 1) {
+        for (auto en : ens) {
+            if (en->getTypeName() == "minecraft:ender_dragon") {
+                uid = en->getActorUniqueId();
+                break;
+            }
+        } 
+    }
+    auto afc = (AreaEffectCloud*)(Global<Level>->getSpawner().spawnProjectile(*Level::getBlockSource(2), identifier, nullptr, pos, pos));
+    if(afc != nullptr) {
+        try{
+            afc->setDuration(1800);
+            afc->setParticle(ParticleType::dragonbreath);
+            afc->setInitialRadius(7.0);
+            afc->setRadiusChangeOnPickup(-0.01);
+            afc->setRadiusPerTick(-0.003);
+            MobEffectInstance eff(7, 1, 2);
+            afc->addAreaEffect(eff);
+            if (uid != -1) {
+                afc->setOwner(uid);
+            }
+        }
+        catch (...) {}
+    }
+}
+
+void ClearList() {
+    try {
         std::ifstream DataFile("plugins/FerociousEnderDragon/data/data.json");
         if (!DataFile.is_open()) {
             return;
@@ -101,22 +138,10 @@ void CrystalHeal() {
         DataFile.close();
         auto sz = data["CrystalHeal"].size();
         if (sz >= 1) {
-			for (int i = 0; i <= sz-1; i++) {
-                if (data["CrystalHeal"][i]["Y"].get<float>() > 0) {
-                    auto healtime = data["CrystalHeal"][i]["HealTime"].get<int>() + 5;
-                    if (healtime > Settings::HealCostTime) {
-                        Vec3 healpos = {
-                            data["CrystalHeal"][i]["X"].get<float>(),
-                            data["CrystalHeal"][i]["Y"].get<float>(),
-                            data["CrystalHeal"][i]["Z"].get<float>()
-                        };
-                        HealCrystal(healpos);
-                        data["CrystalHeal"][i]["Y"] = -1;
-                        data["CrystalHeal"][i]["HealTime"] = 0;
-                    }
-                    else {
-                        data["CrystalHeal"][i]["HealTime"] = healtime;
-                    }
+    		for (int i = 0; i <= sz-1; i++) {
+                if (data["CrystalHeal"][i]["Y"].get<float>() < 0) {
+                    data["CrystalHeal"].erase(i);
+                    break;
                 }
             }
             std::ofstream NDataFile("plugins/FerociousEnderDragon/data/data.json");
@@ -126,7 +151,64 @@ void CrystalHeal() {
             NDataFile << data.dump(4);
             NDataFile.close();
         }
-    }, 100);
+    }
+    catch (...) {}
+}
+
+void CrystalHeal() {
+    try {
+        std::ifstream DataFile("plugins/FerociousEnderDragon/data/data.json");
+        if (!DataFile.is_open()) {
+            return;
+        }
+        nlohmann::json data;
+        DataFile >> data;
+        DataFile.close();
+        auto sz = data["CrystalHeal"].size();
+        if (sz >= 1) {
+    		for (int i = 0; i <= sz-1; i++) {
+                if (data["CrystalHeal"][i]["Y"].get<float>() > 0) {
+                    auto healtime = data["CrystalHeal"][i]["HealTime"].get<int>() + 5;
+                    if (healtime > Settings::HealCostTime) {
+                        try{
+                            Vec3 healpos = {
+                                data["CrystalHeal"][i]["X"].get<float>(),
+                                data["CrystalHeal"][i]["Y"].get<float>(),
+                                data["CrystalHeal"][i]["Z"].get<float>()
+                            };
+                            if (HealCrystal(healpos) == true) {
+                                data["CrystalHeal"][i]["Y"] = -1;
+                                data["CrystalHeal"][i]["HealTime"] = 0;
+                            }
+                        }
+                        catch (...) {}
+                    }
+                    else {
+                        if (healtime >= Settings::HealCostTime -15 && healtime < Settings::HealCostTime -10) {
+                            try {
+                                Vec3 breathpos = {
+                                    data["CrystalHeal"][i]["X"].get<float>(),
+                                    data["CrystalHeal"][i]["Y"].get<float>() - 0.5f,
+                                    data["CrystalHeal"][i]["Z"].get<float>()
+                                };
+                                BreathCrystal(breathpos);
+                            }
+                            catch (...) {}
+                        }
+                        data["CrystalHeal"][i]["HealTime"] = healtime;
+                    }
+                }
+                //data["CrystalHeal"].erase(i);
+            }
+            std::ofstream NDataFile("plugins/FerociousEnderDragon/data/data.json");
+            if (!NDataFile.is_open()) {
+                return;
+            }
+            NDataFile << data.dump(4);
+            NDataFile.close();
+        }
+    }
+    catch (...) {}
 }
 
 void GlobalExplode() {
@@ -156,6 +238,9 @@ void GlobalLightning() {
     Vec3 Center = {0,64,0};
     ActorDefinitionIdentifier identifier("lightning_bolt");
     for (auto pl : pls) {
+        if (pl->isCreative() || pl->isSpectator()) {
+            continue;
+        }
         if (pl->distanceTo(Center) <= 128) {
             auto pos = pl->getPosition();
             Global<Level>->getSpawner().spawnProjectile(*Level::getBlockSource(2), identifier, nullptr, pos, pos);
@@ -174,18 +259,14 @@ void SpawnChildMobs(Vec3 pos) {
 
 void HealDragon() {
     auto ens = Global<Level>->getAllEntities();
-    for (auto en : ens) {
-        if (en->getDimensionId() == 2 && en->getTypeName() == "minecraft:ender_dragon") {
-            en->heal(Settings::RegenerationEachTime);
-            return;
+    if (ens.size() >= 1) {
+        for (auto en : ens) {
+            if (en->getDimensionId() == 2 && en->getTypeName() == "minecraft:ender_dragon") {
+                en->heal(Settings::RegenerationEachTime);
+                return;
+            }
         }
     }
-}
-
-void NatureRegeneration() {
-    Schedule::repeat([](){
-        HealDragon();
-    }, Settings::IntervalTicks);
 }
 
 void WritePlayerData(Player* pl, int fdmg) {
@@ -238,10 +319,12 @@ void KillReward() {
     nlohmann::json data;
     DataFile >> data;
     DataFile.close();
+    Level::broadcastText("末影龙已被击杀，总计对末影龙造成了" + std::to_string(data["AllDamage"].get<int>()) + "伤害", TextType::RAW);
     for (auto db : data) {
         if (db.contains("Xuid")) {
             auto per = ((float)(db["Damage"].get<int>()))/((float)(data["AllDamage"].get<int>()));
             auto mun = (int)(per*Settings::TotalReward);
+            Level::broadcastText("玩家" + db["Name"].get<string>() + "贡献了" + std::to_string((int)(per*100)) + "％的输出， 获得了" + std::to_string(mun) + "金币", TextType::RAW);
             if (Settings::UseLLMoney) {
                 auto xuid = db["Xuid"].get<string>();
                 LLMoneyAdd(xuid, mun);
@@ -264,9 +347,11 @@ void RemoveCrystal() {
     }
 }
 
-void AddEffect(Player* en, int effectid, int duration, int level) {
-    MobEffectInstance ins = MobEffectInstance((unsigned int)effectid, duration, level, false, true, false);
-    en->addEffect(ins);
+void AddEffect(Player* pl, int effectid, int duration, int level) {
+    if (pl->isSurvival() || pl->isAdventure()) {
+        MobEffectInstance ins = MobEffectInstance((unsigned int)effectid, duration, level, false, true, false);
+        pl->addEffect(ins);
+    }
 }
 
 void AddCrystalExplodeEffect(Player* pl) {
@@ -325,28 +410,33 @@ std::string ChangeMsg(std::string name, Actor* en, ActorDamageSource* ads, std::
                 return TransMsg(name, "death.ferociousEnderDragon.explosion");
             }
         }
+        return orimsg;
     case ActorDamageCause::Lightning:
         if (en->getDimensionId() == 2 && en->distanceTo(ctr) <= 128) {
             return TransMsg(name, "death.ferociousEnderDragon.lightning");
         }
+        return orimsg;
     case ActorDamageCause::Magic:
         if (ads->isEntitySource()) {
             if (ads->getEntity()->getTypeName() == "minecraft:ender_dragon" && en->getDimensionId() == 2) {
                 return TransMsg(name, "death.ferociousEnderDragon.dragonBreath");
             }
         }
+        return orimsg;
     case ActorDamageCause::EntityAttack:
         if (ads->isEntitySource()) {
             if (ads->getEntity()->getTypeName() == "minecraft:ender_dragon" && en->getDimensionId() == 2) {
                 return TransMsg(name, "death.ferociousEnderDragon.collision");
             }
         }
+        return orimsg;
     case ActorDamageCause::All:
         if (ads->isEntitySource() == false) {
             if (en->getDimensionId() == 2 && en->distanceTo(ctr) <= 128) {
                 return TransMsg(name, "death.ferociousEnderDragon.sonicBoom");
             }
         }
+        return orimsg;
     default:
         return orimsg;
     }

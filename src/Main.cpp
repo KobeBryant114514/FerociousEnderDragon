@@ -4,9 +4,13 @@
 #include "Fuctions.h"
 #include <EventAPI.h>
 #include <mc/Scoreboard.hpp>
+#include <ScheduleAPI.h>
 
 extern Logger logger;
 extern bool isDragonAlive;
+
+int CrystalTimer = 0;
+int HealTimer = 0;
 
 void PluginInit()
 {
@@ -15,12 +19,6 @@ void PluginInit()
     loadConfig();
     CheckAlive();
     Event::ServerStartedEvent::subscribe([](const Event::ServerStartedEvent){
-        if (Settings::IfCrystalHeal) {
-            CrystalHeal();
-        }
-        if (Settings::NatureRegeneration) {
-            NatureRegeneration();
-        }
         if (Settings::EnableReward && Settings::UseLLMoney == true) {
             auto llmoney = ll::getPlugin("LLMoney");
             if (!llmoney) {
@@ -35,4 +33,32 @@ void PluginInit()
         }
         return true;
     });
+    Schedule::repeat([](){
+        CrystalTimer++;
+        HealTimer ++;
+        if (CrystalTimer >= 100) {
+            if (CrystalTimer == 100) {
+                try {
+                    CrystalHeal();
+                }
+                catch (...) {}   
+            }
+            CrystalTimer = 0;
+        }
+        if (HealTimer >= Settings::IntervalTicks) {
+            if (HealTimer == Settings::IntervalTicks) {
+                try {
+                    HealDragon();
+                }
+                catch (...) {}   
+            }
+            HealTimer = 0;
+        }
+    }, 1);
+    std::thread([](){
+        while (true) {
+            std::this_thread::sleep_for(std::chrono::seconds(2));
+            ClearList();
+        }
+    }).detach();
 }

@@ -8,8 +8,7 @@ extern bool isDragonAlive;
 #define TRJ(key1, key2, val)                                     \
     if (json.find(key1) != json.end())                           \
     {                                                            \
-        if (json.at(key1).find(key2) != json.at(key1).end())     \
-        {                                                        \
+        if (json.at(key1).find(key2) != json.at(key1).end()) {   \
             const nlohmann::json &out2 = json.at(key1).at(key2); \
             out2.get_to(val);                                    \
         }                                                        \
@@ -31,13 +30,15 @@ namespace Settings
     bool ImmuneDamageWhileLanding = true;
     bool IfCrystalHeal = true;
     int HealCostTime = 120;
-    bool DragonExplosion = true;//
+    bool DragonExplosion = true;
     int DragonExplosionPower = 6;
     bool DragonLightning = true;
     int LightningDamage = 20;
     bool ReflectDamage = true;
     float ReflectPercentage = 20;
     bool SpawnChildMob = true;
+    bool DragonDestroyItem = false;
+    bool CrystalDestroyItem = false;
     std::vector<std::string> ChildMobList = {
         "minecraft:wither_skeleton"
     };
@@ -67,6 +68,11 @@ namespace Settings
     };
     int DragonEffectDurationTicks = 600;
     int DragonEffectAmplifier = 4;
+    bool DragonHealOnKillMob = true;
+    int HealOnKillMob = 4;
+    bool DragonArmor = true;
+    unsigned short ArmorValue = 4;
+    unsigned short ToughnessValue = 0;
 
     nlohmann::ordered_json globaljson()
     {
@@ -77,6 +83,7 @@ namespace Settings
         json["ModifyCrystalExplosion"]["Enabled"] = ModifyCrystalExplosion;
         json["ModifyCrystalExplosion"]["isFire"] = CrystalExplosionFire;
         json["ModifyCrystalExplosion"]["Power"] = CrystalExplosionPower;
+        json["ModifyCrystalExplosion"]["DestoryItemEntity"] = CrystalDestroyItem;
         json["ModifyDragonDamage"]["Enabled"] = ModifyDragonDamage;
         json["ModifyDragonDamage"]["DragonBreathDamage"] = DragonBreathDamage;
         json["ModifyDragonDamage"]["DirectAttackDamage"] = DirectAttackDamage;
@@ -87,6 +94,7 @@ namespace Settings
         json["CrystalRegeneration"]["Time"] = HealCostTime;
         json["DragonExplosion"]["Enabled"] = DragonExplosion;
         json["DragonExplosion"]["Power"] = DragonExplosionPower;
+        json["DragonExplosion"]["DestoryItemEntity"] = DragonDestroyItem;
         json["DragonLightning"]["Enabled"] = DragonLightning;
         json["DragonLightning"]["LightningDamage"] = LightningDamage;
         json["ReflectDamage"]["Enabled"] = ReflectDamage;
@@ -109,6 +117,11 @@ namespace Settings
         json["DragonUsedEffect"]["DragonEffectId"] = DragonEffectId;
         json["DragonUsedEffect"]["CrystalEffectDurationTicks"] = DragonEffectDurationTicks;
         json["DragonUsedEffect"]["CrystalEffectAmplifier"] = DragonEffectAmplifier;
+        json["DragonHealOnKillMob"]["Enabled"] = DragonHealOnKillMob;
+        json["DragonHealOnKillMob"]["Value"] = HealOnKillMob;
+        json["DragonArmor"]["Enabled"] = DragonArmor;
+        json["DragonArmor"]["ArmorValue"] = ArmorValue;
+        json["DragonArmor"]["ToughnessValue"] = ToughnessValue;
         return json;
     }
 
@@ -120,6 +133,7 @@ namespace Settings
         TRJ("ModifyCrystalExplosion", "Enabled", ModifyCrystalExplosion);
         TRJ("ModifyCrystalExplosion", "isFire", CrystalExplosionFire);
         TRJ("ModifyCrystalExplosion", "Power", CrystalExplosionPower);
+        TRJ("ModifyCrystalExplosion", "DestoryItemEntity", CrystalDestroyItem);
         TRJ("ModifyDragonDamage", "Enabled", ModifyDragonDamage);
         TRJ("ModifyDragonDamage", "DragonBreathDamage", DragonBreathDamage);
         TRJ("ModifyDragonDamage", "DirectAttackDamage", DirectAttackDamage);
@@ -130,6 +144,7 @@ namespace Settings
         TRJ("CrystalRegeneration", "Time", HealCostTime);
         TRJ("DragonExplosion", "Enabled", DragonExplosion);
         TRJ("DragonExplosion", "Power", DragonExplosionPower);
+        TRJ("DragonExplosion", "DestoryItemEntity", DragonDestroyItem);
         TRJ("DragonLightning", "Enabled", DragonLightning);
         TRJ("DragonLightning", "LightningDamage", LightningDamage);
         TRJ("ReflectDamage", "Enabled", ReflectDamage);
@@ -152,6 +167,11 @@ namespace Settings
         TRJ("DragonUsedEffect", "DragonEffectId", DragonEffectId);
         TRJ("DragonUsedEffect", "CrystalEffectDurationTicks", DragonEffectDurationTicks);
         TRJ("DragonUsedEffect", "CrystalEffectAmplifier", DragonEffectAmplifier);
+        TRJ("DragonHealOnKillMob", "Enabled", DragonHealOnKillMob);
+        TRJ("DragonHealOnKillMob", "Value", HealOnKillMob);
+        TRJ("DragonArmor", "Enabled", DragonArmor);
+        TRJ("DragonArmor", "ArmorValue", ArmorValue);
+        TRJ("DragonArmor", "ToughnessValue", ToughnessValue);
     }
 
     void WriteDefaultConfig(const std::string &fileName)

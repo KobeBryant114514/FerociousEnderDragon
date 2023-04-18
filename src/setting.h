@@ -42,6 +42,13 @@ namespace Settings {
     extern std::vector<int> DragonEffectId;
     extern int DragonEffectDurationTicks;
     extern int DragonEffectAmplifier;
+    extern bool DragonHealOnKillMob;
+    extern int HealOnKillMob;
+    extern bool DragonDestroyItem;
+    extern bool CrystalDestroyItem;
+    extern bool DragonArmor;
+    extern unsigned short ArmorValue;
+    extern unsigned short ToughnessValue;
 
     extern nlohmann::ordered_json globaljson();
     void initjson(nlohmann::ordered_json json);
