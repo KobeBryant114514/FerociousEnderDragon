@@ -115,8 +115,8 @@ namespace Settings
         json["CrystalExplodeEffect"]["CrystalEffectAmplifier"] = CrystalEffectAmplifier;
         json["DragonUsedEffect"]["Enabled"] = DragonExplodeEffect;
         json["DragonUsedEffect"]["DragonEffectId"] = DragonEffectId;
-        json["DragonUsedEffect"]["CrystalEffectDurationTicks"] = DragonEffectDurationTicks;
-        json["DragonUsedEffect"]["CrystalEffectAmplifier"] = DragonEffectAmplifier;
+        json["DragonUsedEffect"]["DragonEffectDurationTicks"] = DragonEffectDurationTicks;
+        json["DragonUsedEffect"]["DragonEffectAmplifier"] = DragonEffectAmplifier;
         json["DragonHealOnKillMob"]["Enabled"] = DragonHealOnKillMob;
         json["DragonHealOnKillMob"]["Value"] = HealOnKillMob;
         json["DragonArmor"]["Enabled"] = DragonArmor;
@@ -165,8 +165,8 @@ namespace Settings
         TRJ("CrystalExplodeEffect", "CrystalEffectAmplifier", CrystalEffectAmplifier);
         TRJ("DragonUsedEffect", "Enabled", DragonExplodeEffect);
         TRJ("DragonUsedEffect", "DragonEffectId", DragonEffectId);
-        TRJ("DragonUsedEffect", "CrystalEffectDurationTicks", DragonEffectDurationTicks);
-        TRJ("DragonUsedEffect", "CrystalEffectAmplifier", DragonEffectAmplifier);
+        TRJ("DragonUsedEffect", "DragonEffectDurationTicks", DragonEffectDurationTicks);
+        TRJ("DragonUsedEffect", "DragonEffectAmplifier", DragonEffectAmplifier);
         TRJ("DragonHealOnKillMob", "Enabled", DragonHealOnKillMob);
         TRJ("DragonHealOnKillMob", "Value", HealOnKillMob);
         TRJ("DragonArmor", "Enabled", DragonArmor);
