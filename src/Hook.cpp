@@ -1,13 +1,7 @@
 #include <HookAPI.h>
 #include <LoggerAPI.h>
 #include "Version.h"
-#include <mc/DragonDeathGoal.hpp>
 #include <mc/DragonFireball.hpp>
-#include <mc/DragonFlamingGoal.hpp>
-#include <mc/DragonLandingGoal.hpp>
-#include <mc/DragonScanningGoal.hpp>
-#include <mc/DragonStrafePlayerGoal.hpp>
-#include <mc/DragonTakeoffGoal.hpp>
 #include <mc/EndDragonFight.hpp>
 #include <mc/EnderDragon.hpp>
 #include <mc/EnderCrystal.hpp>
@@ -25,7 +19,6 @@
 #include <ScheduleAPI.h>
 #include <mc/ServerPlayer.hpp>
 #include <mc/AreaEffectCloud.hpp>
-#include <time.h>
 #include "Fuctions.h"
 #include <mc/CompoundTag.hpp>
 #include <mc/Tag.hpp>
@@ -41,12 +34,12 @@ using namespace Settings;
 bool isLanding = false;
 bool isDragonAlive = false;
 
-TInstanceHook(void, "?stop@DragonTakeoffGoal@@UEAAXXZ", DragonTakeoffGoal) {
+TClasslessInstanceHook(void, "?stop@DragonTakeoffGoal@@UEAAXXZ") {
     isLanding = false;
     return original(this);
 }
 
-TInstanceHook(void, "?stop@DragonLandingGoal@@UEAAXXZ", DragonLandingGoal) {
+TClasslessInstanceHook(void, "?stop@DragonLandingGoal@@UEAAXXZ") {
     isLanding = true;
     return original(this);
 }
@@ -209,7 +202,7 @@ TInstanceHook(float, "?getDamageAfterResistanceEffect@Mob@@UEBAMAEBVActorDamageS
     return original(this, src, dmg);
 }
 
-TInstanceHook(void, "?start@DragonFlamingGoal@@UEAAXXZ", DragonFlamingGoal) {
+TClasslessInstanceHook(void, "?start@DragonFlamingGoal@@UEAAXXZ") {
     isDragonAlive = true;
     if (DragonExplosion) {
         GlobalExplode();
@@ -217,7 +210,7 @@ TInstanceHook(void, "?start@DragonFlamingGoal@@UEAAXXZ", DragonFlamingGoal) {
     return original(this);
 }
 
-TInstanceHook(void, "?stop@DragonFlamingGoal@@UEAAXXZ", DragonFlamingGoal) {
+TClasslessInstanceHook(void, "?stop@DragonFlamingGoal@@UEAAXXZ") {
     isDragonAlive = true;
     if (DragonExplosion) {
         GlobalExplode();
@@ -225,7 +218,21 @@ TInstanceHook(void, "?stop@DragonFlamingGoal@@UEAAXXZ", DragonFlamingGoal) {
     return original(this);
 }
 
-TInstanceHook(void, "?start@DragonStrafePlayerGoal@@UEAAXXZ", DragonStrafePlayerGoal) {
+TInstanceHook(int, "?getArmorValue@Mob@@UEBAHXZ", Mob) {
+    if (getTypeName() == "minecraft:ender_dragon") {
+        return (int)ArmorValue;
+    }
+    return original(this);
+}
+
+TInstanceHook(int, "?getToughnessValue@Mob@@UEBAHXZ", Mob) {
+    if (getTypeName() == "minecraft:ender_dragon") {
+        return (int)ToughnessValue;
+    }
+    return original(this);
+}
+
+TClasslessInstanceHook(void, "?start@DragonStrafePlayerGoal@@UEAAXXZ") {
     isDragonAlive = true;
     if (DragonLightning) {
         GlobalLightning();
@@ -233,7 +240,7 @@ TInstanceHook(void, "?start@DragonStrafePlayerGoal@@UEAAXXZ", DragonStrafePlayer
     return original(this);
 }
 
-TInstanceHook(void, "?stop@DragonStrafePlayerGoal@@UEAAXXZ", DragonStrafePlayerGoal) {
+TClasslessInstanceHook(void, "?stop@DragonStrafePlayerGoal@@UEAAXXZ") {
     isDragonAlive = true;
     if (DragonLightning) {
         GlobalLightning();
@@ -241,7 +248,7 @@ TInstanceHook(void, "?stop@DragonStrafePlayerGoal@@UEAAXXZ", DragonStrafePlayerG
     return original(this);
 }
 
-TInstanceHook(void, "?setTarget@DragonStrafePlayerGoal@@AEAAXPEAVActor@@@Z", DragonStrafePlayerGoal, Actor* pl) {
+TClasslessInstanceHook(void, "?setTarget@DragonStrafePlayerGoal@@AEAAXPEAVActor@@@Z", Actor* pl) {
     isDragonAlive = true;
     if (SpawnChildMob) {
         auto pos = pl->getPosition();
@@ -253,14 +260,22 @@ TInstanceHook(void, "?setTarget@DragonStrafePlayerGoal@@AEAAXPEAVActor@@@Z", Dra
     return original(this, pl);
 }
 
-TInstanceHook(DRES, "?getDeathMessage@ActorDamageSource@@UEBA?AU?$pair@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V?$vector@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V?$allocator@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@@2@@std@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@3@PEAVActor@@@Z", ActorDamageSource, string a1, Actor* a2) {
+TClasslessInstanceHook(DRES, "?getDeathMessage@ActorDamageSource@@UEBA?AU?$pair@V?$basic_string"
+                             "@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V?$vector@V?$basic_string"
+                             "@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V?$allocator@V?$basic_string"
+                             "@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@@2@@std@@V?$basic_string"
+                             "@DU?$char_traits@D@std@@V?$allocator@D@2@@3@PEAVActor@@@Z", string a1, Actor* a2) {
     auto res = original(this, a1, a2);
     auto ads = (ActorDamageSource*)this;
     res.first = ChangeMsg(a1, a2, ads, res.first);
     return res;
 }
 
-TInstanceHook(DRES, "?getDeathMessage@ActorDamageByActorSource@@UEBA?AU?$pair@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V?$vector@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V?$allocator@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@@2@@std@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@3@PEAVActor@@@Z", ActorDamageSource, string a1, Actor* a2) {
+TClasslessInstanceHook(DRES, "?getDeathMessage@ActorDamageByActorSource@@UEBA?AU?$pair@V?$basic_string"
+                             "@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V?$vector@V?$basic_string"
+                             "@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V?$allocator@V?$basic_string"
+                             "@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@@2@@std@@V?$basic_string"
+                             "@DU?$char_traits@D@std@@V?$allocator@D@2@@3@PEAVActor@@@Z", string a1, Actor* a2) {
     auto res = original(this, a1, a2);
     auto ads = (ActorDamageSource*)this;
     res.first = ChangeMsg(a1, a2, ads, res.first);
@@ -278,48 +293,3 @@ TInstanceHook(bool, "?isInvulnerableTo@ItemActor@@UEBA_NAEBVActorDamageSource@@@
     }
     return original(this, ads);
 }
-
-TInstanceHook(int, "?getArmorValue@Mob@@UEBAHXZ", Mob) {
-    if (getTypeName() == "minecraft:ender_dragon") {
-        return (int)ArmorValue;
-    }
-    return original(this);
-}
-
-TInstanceHook(int, "?getToughnessValue@Mob@@UEBAHXZ", Mob) {
-    if (getTypeName() == "minecraft:ender_dragon") {
-        return (int)ToughnessValue;
-    }
-    return original(this);
-}
-
-//?getOnDeathExperience@ExperienceRewardComponent@@QEBAHAEAVActor@@@Z 
-//?awardKillScore@Actor@@UEAAXAEAV1@H@Z
-/*
-#include <mc/Block.hpp>
-#include <mc/BlockSource.hpp>
-#include <mc/Spawner.hpp>
-#include <mc/ItemActor.hpp>
-#include <mc/ItemStack.hpp>
-bool isTNT = false;
-TInstanceHook(void, "?onExploded@Block@@QEBAXAEAVBlockSource@@AEBVBlockPos@@PEAVActor@@@Z", Block, BlockSource* blockSource, BlockPos* blockPosPtr, Actor* actor) {
-    if (actor != nullptr) {
-        if (actor->getTypeName() == "minecraft:tnt") {
-            isTNT = true;
-            Schedule::nextTick([blockPosPtr, blockSource, this](){
-                isTNT = false;
-                Global<Level>->spawnItem(blockPosPtr->toVec3(), blockSource->getDimensionId(), ItemStack::create(this->getTypeName()));
-            });
-        }
-    }
-    return original(this, blockSource, blockPosPtr, actor);
-}
-
-TInstanceHook(ItemActor*, "?spawnItem@Spawner@@QEAAPEAVItemActor@@AEAVBlockSource@@AEBVItemStack@@PEAVActor@@AEBVVec3@@H@Z", Spawner, BlockSource& a1, ItemStack& a2, Actor* a3, Vec3& a4, int a5) {
-    auto it = original(this, a1, a2, a3, a4, a5);
-    if (isTNT) {
-        it->remove();
-    }
-    return it;
-}
-*/
