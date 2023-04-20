@@ -77,7 +77,7 @@ TInstanceHook(void, "?_setRespawnStage@EndDragonFight@@AEAAXW4RespawnAnimation@@
     isLanding = false;
     SaveAlive();
     ResetPlayerData();
-    auto uid = dAccess<ActorUniqueID>(this, 64);
+    auto uid = dAccess<ActorUniqueID, 64>(this);
     auto en = Global<Level>->getEntity(uid);
     if (en != nullptr) {
         AttributeInstance* HP = en->getMutableAttribute(Global<SharedAttributes>->HEALTH);
