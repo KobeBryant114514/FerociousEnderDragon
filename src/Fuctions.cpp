@@ -430,7 +430,7 @@ std::string ChangeMsg(std::string name, Actor* en, ActorDamageSource* ads, std::
             }
         }
         return orimsg;
-    case ActorDamageCause::SonicBoom:
+    case (ActorDamageCause)31:
         if (ads->isEntitySource() == false) {
             if (en->getDimensionId() == 2 && en->distanceTo(ctr) <= 128) {
                 return TransMsg(name, "death.ferociousEnderDragon.sonicBoom");

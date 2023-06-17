@@ -127,8 +127,8 @@ namespace Settings
 
     void initjson(nlohmann::json json)
     {
-        TRJ("DragonAttribute", "Enabled", ModifyDragonHealth);
-        TRJ("DragonAttribute", "DragonHealth", DragonHealth);
+        TRJ("ModifyDragonHealth", "Enabled", ModifyDragonHealth);
+        TRJ("ModifyDragonHealth", "DragonHealth", DragonHealth);
         TRJ("AttacktoDestroyCrystalOnly", "Enabled", AttackCrystalOnly);
         TRJ("ModifyCrystalExplosion", "Enabled", ModifyCrystalExplosion);
         TRJ("ModifyCrystalExplosion", "isFire", CrystalExplosionFire);
