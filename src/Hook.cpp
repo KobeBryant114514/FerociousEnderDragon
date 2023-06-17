@@ -51,7 +51,7 @@ TInstanceHook(bool, "?die@Mob@@UEAAXAEBVActorDamageSource@@@Z", Mob, ActorDamage
         RemoveCrystal();
         KillReward();
     }
-    if (isPlayer() && ads->isEntitySource() && DragonHealOnKillMob) {
+    if (this->isPlayer() && ads->isEntitySource() && DragonHealOnKillMob) {
         if (ads->getEntity()->getTypeName() == "minecraft:ender_dragon") {
             ads->getEntity()->heal(HealOnKillMob);
         }
@@ -142,7 +142,7 @@ TInstanceHook(bool, "?_hurt@Mob@@MEAA_NAEBVActorDamageSource@@M_N1@Z", Mob, Acto
                 }
                 if (ReflectDamage) {
                     auto damage = dmg*ReflectPercentage/100;
-                    source->hurtEntity(damage, ActorDamageCause::All);
+                    source->hurtEntity(damage, ActorDamageCause::SonicBoom);
                 }
                 if (PlayerDamageLimit && dmg >= MaxDamagePerTime) {
                     dmg = MaxDamagePerTime;

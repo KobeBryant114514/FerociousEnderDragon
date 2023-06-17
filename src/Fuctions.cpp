@@ -319,12 +319,12 @@ void KillReward() {
     nlohmann::json data;
     DataFile >> data;
     DataFile.close();
-    Level::broadcastText("末影龙已被击杀，总计对末影龙造成了" + std::to_string(data["AllDamage"].get<int>()) + "伤害", TextType::RAW);
+    //Level::broadcastText("末影龙已被击杀，总计对末影龙造成了" + std::to_string(data["AllDamage"].get<int>()) + "伤害", TextType::RAW);
     for (auto db : data) {
         if (db.contains("Xuid")) {
             auto per = ((float)(db["Damage"].get<int>()))/((float)(data["AllDamage"].get<int>()));
             auto mun = (int)(per*Settings::TotalReward);
-            Level::broadcastText("玩家" + db["Name"].get<string>() + "贡献了" + std::to_string((int)(per*100)) + "％的输出， 获得了" + std::to_string(mun) + "金币", TextType::RAW);
+            //Level::broadcastText("玩家" + db["Name"].get<string>() + "贡献了" + std::to_string((int)(per*100)) + "％的输出， 获得了" + std::to_string(mun) + "金币", TextType::RAW);
             if (Settings::UseLLMoney) {
                 auto xuid = db["Xuid"].get<string>();
                 LLMoneyAdd(xuid, mun);
@@ -430,7 +430,7 @@ std::string ChangeMsg(std::string name, Actor* en, ActorDamageSource* ads, std::
             }
         }
         return orimsg;
-    case ActorDamageCause::All:
+    case ActorDamageCause::SonicBoom:
         if (ads->isEntitySource() == false) {
             if (en->getDimensionId() == 2 && en->distanceTo(ctr) <= 128) {
                 return TransMsg(name, "death.ferociousEnderDragon.sonicBoom");
