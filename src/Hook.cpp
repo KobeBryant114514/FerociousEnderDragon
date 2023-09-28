@@ -26,6 +26,7 @@
 #include <mc/Spawner.hpp>
 #include <mc/ActorDefinitionIdentifier.hpp>
 #include <mc/ItemActor.hpp>
+#include <mc/ActorDamageByActorSource.hpp>
 
 extern Logger logger;
 using namespace std;
@@ -130,10 +131,10 @@ TInstanceHook(bool, "?_hurt@Mob@@MEAA_NAEBVActorDamageSource@@M_N1@Z", Mob, Acto
         Actor* source = nullptr;
         if (src.isEntitySource()) {
             if (src.isChildEntitySource()) {
-                source = Level::getEntity(src.getEntityUniqueID());
+                source = src.getEntity()->getOwner();
             }
             else {
-                source = Level::getEntity(src.getDamagingEntityUniqueID());
+                source = src.getEntity();
             }
             if (source->isPlayer()) {
                 isDragonAlive = true;
@@ -142,7 +143,7 @@ TInstanceHook(bool, "?_hurt@Mob@@MEAA_NAEBVActorDamageSource@@M_N1@Z", Mob, Acto
                 }
                 if (ReflectDamage) {
                     auto damage = dmg*ReflectPercentage/100;
-                    source->hurtEntity(damage, (ActorDamageCause)31);
+                    source->hurtEntity(damage, (ActorDamageCause)31, this);
                 }
                 if (PlayerDamageLimit && dmg >= MaxDamagePerTime) {
                     dmg = MaxDamagePerTime;
@@ -218,20 +219,6 @@ TClasslessInstanceHook(void, "?stop@DragonFlamingGoal@@UEAAXXZ") {
     return original(this);
 }
 
-TInstanceHook(int, "?getArmorValue@Mob@@UEBAHXZ", Mob) {
-    if (getTypeName() == "minecraft:ender_dragon") {
-        return (int)ArmorValue;
-    }
-    return original(this);
-}
-
-TInstanceHook(int, "?getToughnessValue@Mob@@UEBAHXZ", Mob) {
-    if (getTypeName() == "minecraft:ender_dragon") {
-        return (int)ToughnessValue;
-    }
-    return original(this);
-}
-
 TClasslessInstanceHook(void, "?start@DragonStrafePlayerGoal@@UEAAXXZ") {
     isDragonAlive = true;
     if (DragonLightning) {
@@ -258,38 +245,4 @@ TClasslessInstanceHook(void, "?setTarget@DragonStrafePlayerGoal@@AEAAXPEAVActor@
         DragonUseEffect();
     }
     return original(this, pl);
-}
-
-TClasslessInstanceHook(DRES, "?getDeathMessage@ActorDamageSource@@UEBA?AU?$pair@V?$basic_string"
-                             "@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V?$vector@V?$basic_string"
-                             "@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V?$allocator@V?$basic_string"
-                             "@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@@2@@std@@V?$basic_string"
-                             "@DU?$char_traits@D@std@@V?$allocator@D@2@@3@PEAVActor@@@Z", string a1, Actor* a2) {
-    auto res = original(this, a1, a2);
-    auto ads = (ActorDamageSource*)this;
-    res.first = ChangeMsg(a1, a2, ads, res.first);
-    return res;
-}
-
-TClasslessInstanceHook(DRES, "?getDeathMessage@ActorDamageByActorSource@@UEBA?AU?$pair@V?$basic_string"
-                             "@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V?$vector@V?$basic_string"
-                             "@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V?$allocator@V?$basic_string"
-                             "@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@@2@@std@@V?$basic_string"
-                             "@DU?$char_traits@D@std@@V?$allocator@D@2@@3@PEAVActor@@@Z", string a1, Actor* a2) {
-    auto res = original(this, a1, a2);
-    auto ads = (ActorDamageSource*)this;
-    res.first = ChangeMsg(a1, a2, ads, res.first);
-    return res;
-}
-
-TInstanceHook(bool, "?isInvulnerableTo@ItemActor@@UEBA_NAEBVActorDamageSource@@@Z", ItemActor, ActorDamageSource* ads) {
-    if (CrystalDestroyItem == false && ads->getCause() == ActorDamageCause::BlockExplosion) {
-        return true;
-    }
-    if (ads->isEntitySource()) {
-        if (DragonDestroyItem == false && ads->getEntity()->getTypeName() == "minecraft:ender_dragon") {
-            return true;
-        }
-    }
-    return original(this, ads);
 }

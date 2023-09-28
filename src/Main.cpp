@@ -5,9 +5,11 @@
 #include <EventAPI.h>
 #include <mc/Scoreboard.hpp>
 #include <ScheduleAPI.h>
+#include "GMLib/GMLib_ModAPI.h"
 
 extern Logger logger;
 extern bool isDragonAlive;
+extern std::vector<unsigned char> RP_Data;
 
 int CrystalTimer = 0;
 int HealTimer = 0;
@@ -16,6 +18,11 @@ void PluginInit()
 {
     Logger(PLUGIN_NAME).info("Loaded Version {}.{}.{}",PLUGIN_VERSION_MAJOR,PLUGIN_VERSION_MINOR,PLUGIN_VERSION_REVISION);
     Logger(PLUGIN_NAME).info("Author Tsubasa6848");
+    GMLib_Mod::addResourcePack("FerociousEnderDragon", RP_Data, "1.0.0");
+    GMLib_Mod::addDamageCause(ActorDamageCause::Magic, "dragonBreath", "minecraft:ender_dragon");
+    GMLib_Mod::addDamageCause(ActorDamageCause::EntityAttack, "dragonAttack", "minecraft:ender_dragon");
+    GMLib_Mod::addDamageCause(ActorDamageCause::EntityExplosion, "dragonExplode", "minecraft:ender_dragon");
+    GMLib_Mod::addDamageCause(ActorDamageCause::All, "dragonThorns", "minecraft:ender_dragon");
     loadConfig();
     CheckAlive();
     Event::ServerStartedEvent::subscribe([](const Event::ServerStartedEvent){
